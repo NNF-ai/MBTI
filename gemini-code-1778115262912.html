@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI 성격 유형 검사</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #0a0a14; overflow-x: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const questions = [
+            { id:1, dim:'EI', text:"파티나 모임에서 당신은?", a:{text:"많은 사람들과 어울리며 에너지를 얻는다",type:'E'}, b:{text:"소수와 깊이 대화하거나 혼자 있고 싶어진다",type:'I'} },
+            { id:2, dim:'EI', text:"주말을 이상적으로 보내는 방법은?", a:{text:"친구들과 왁자지껄하게 보낸다",type:'E'}, b:{text:"혼자 또는 한두 명과 조용히 충전한다",type:'I'} },
+            { id:3, dim:'EI', text:"생각을 정리할 때 주로?", a:{text:"다른 사람과 이야기하면서 정리된다",type:'E'}, b:{text:"혼자 조용히 생각하는 시간이 필요하다",type:'I'} },
+            { id:4, dim:'EI', text:"낯선 사람들과 함께 있을 때?", a:{text:"먼저 말을 걸고 쉽게 친해진다",type:'E'}, b:{text:"상황을 파악하며 신중하게 행동한다",type:'I'} },
+            { id:5, dim:'EI', text:"에너지를 충전하는 방식은?", a:{text:"사람들과 함께하는 활동",type:'E'}, b:{text:"혼자만의 고요한 시간",type:'I'} },
+            { id:6, dim:'SN', text:"새로운 것을 배울 때 당신은?", a:{text:"구체적인 사실과 세부 정보에 집중한다",type:'S'}, b:{text:"전체 개념과 가능성을 먼저 파악한다",type:'N'} },
+            { id:7, dim:'SN', text:"미래에 대해 생각할 때?", a:{text:"현실적이고 달성 가능한 목표를 세운다",type:'S'}, b:{text:"다양한 가능성을 상상하고 꿈꾼다",type:'N'} },
+            { id:8, dim:'SN', text:"문제를 해결할 때 선호하는 방식은?", a:{text:"검증된 방법과 경험을 활용한다",type:'S'}, b:{text:"창의적이고 새로운 방법을 시도한다",type:'N'} },
+            { id:9, dim:'SN', text:"대화할 때 설명 방식은?", a:{text:"구체적이고 직접적으로 사실을 전달한다",type:'S'}, b:{text:"비유와 상상력을 활용해 표현한다",type:'N'} },
+            { id:10, dim:'SN', text:"일상에서 더 편한 것은?", a:{text:"규칙적이고 안정적인 루틴",type:'S'}, b:{text:"새로운 변화와 다양성",type:'N'} },
+            { id:11, dim:'TF', text:"중요한 결정을 내릴 때?", a:{text:"논리와 객관적인 분석을 우선시한다",type:'T'}, b:{text:"감정과 사람들에게 미치는 영향을 고려한다",type:'F'} },
+            { id:12, dim:'TF', text:"갈등 상황에서 당신은?", a:{text:"사실에 근거한 합리적 해결책을 찾는다",type:'T'}, b:{text:"모든 사람의 감정을 먼저 살핀다",type:'F'} },
+            { id:13, dim:'TF', text:"친구가 고민을 털어놓을 때?", a:{text:"실질적인 해결책을 제시하려 한다",type:'T'}, b:{text:"공감하고 감정적으로 위로한다",type:'F'} },
+            { id:14, dim:'TF', text:"피드백이나 비판을 받을 때?", a:{text:"객관적으로 분석하고 개선점을 찾는다",type:'T'}, b:{text:"감정적으로 먼저 반응하게 된다",type:'F'} },
+            { id:15, dim:'TF', text:"좋은 결정이란?", a:{text:"논리적으로 옳은 결정",type:'T'}, b:{text:"사람들이 공감할 수 있는 결정",type:'F'} },
+            { id:16, dim:'JP', text:"계획에 대한 당신의 태도는?", a:{text:"미리 계획을 세우고 따르는 것이 편하다",type:'J'}, b:{text:"즉흥적으로 유연하게 행동하는 것이 편하다",type:'P'} },
+            { id:17, dim:'JP', text:"마감 기한이 있을 때?", a:{text:"미리 완료하고 여유를 즐긴다",type:'J'}, b:{text:"마감이 다가와야 집중력이 높아진다",type:'P'} },
+            { id:18, dim:'JP', text:"여행을 계획할 때?", a:{text:"세부 일정을 꼼꼼히 계획한다",type:'J'}, b:{text:"큰 방향만 잡고 즉흥적으로 즐긴다",type:'P'} },
+            { id:19, dim:'JP', text:"하루가 끝날 때 더 만족스러운 것은?", a:{text:"할 일을 모두 완료한 날",type:'J'}, b:{text:"예상치 못한 즐거운 일이 생긴 날",type:'P'} },
+            { id:20, dim:'JP', text:"일을 처리하는 방식은?", a:{text:"체계적으로 단계별로 진행한다",type:'J'}, b:{text:"상황에 따라 유연하게 조정하며 진행한다",type:'P'} },
+        ];
+
+        const mbtiData = {
+            INTJ:{name:"전략가",emoji:"🔭",color:"#7c3aed",desc:"독립적이고 분석적인 사고를 가진 전략가. 장기 계획을 세우고 효율적으로 목표를 달성합니다.",traits:["독립적","전략적","분석적","결단력"]},
+            INTP:{name:"논리술사",emoji:"🔬",color:"#2563eb",desc:"지식과 논리를 사랑하는 사색가. 복잡한 아이디어를 탐구하며 혁신적 해결책을 찾습니다.",traits:["논리적","창의적","객관적","호기심"]},
+            ENTJ:{name:"통솔자",emoji:"👑",color:"#dc2626",desc:"카리스마 넘치는 리더. 비효율을 싫어하고 목표 달성을 위해 사람들을 이끕니다.",traits:["결단력","리더십","효율적","자신감"]},
+            ENTP:{name:"변론가",emoji:"⚡",color:"#ea580c",desc:"빠른 사고와 날카로운 통찰로 아이디어를 탐구하는 혁신가. 도전과 토론을 즐깁니다.",traits:["혁신적","토론","창의적","열정"]},
+            INFJ:{name:"옹호자",emoji:"🌙",color:"#4f46e5",desc:"깊은 통찰력과 따뜻한 마음을 가진 이상주의자. 세상을 더 나은 곳으로 만들고자 합니다.",traits:["통찰력","이타적","창의적","원칙"]},
+            INFP:{name:"중재자",emoji:"🌸",color:"#db2777",desc:"이상적인 세계를 꿈꾸는 시인. 깊은 감수성과 창의력으로 의미 있는 것을 추구합니다.",traits:["감수성","창의적","이상주의","공감"]},
+            ENFJ:{name:"선도자",emoji:"🌟",color:"#0d9488",desc:"타고난 카리스마로 사람들을 영감하고 이끄는 선생님. 타인의 성장을 돕는 것을 사랑합니다.",traits:["카리스마","공감","리더십","이타적"]},
+            ENFP:{name:"활동가",emoji:"🎨",color:"#ca8a04",desc:"열정적이고 창의적인 자유로운 영혼. 새로운 아이디어와 사람들에게서 에너지를 얻습니다.",traits:["열정적","창의적","공감","자유"]},
+            ISTJ:{name:"현실주의자",emoji:"🏛️",color:"#475569",desc:"신뢰할 수 있고 책임감 강한 실용주의자. 규칙과 전통을 존중하며 성실하게 임무를 완수합니다.",traits:["책임감","성실","신뢰","체계적"]},
+            ISFJ:{name:"수호자",emoji:"🛡️",color:"#be185d",desc:"따뜻하고 헌신적인 보호자. 사랑하는 사람들을 지키고 안정적인 환경을 만들기 위해 노력합니다.",traits:["헌신적","따뜻함","보호","안정"]},
+            ESTJ:{name:"경영자",emoji:"⚙️",color:"#0891b2",desc:"질서와 규칙을 중시하는 실천가. 체계적으로 일을 처리하며 공동체를 이끌어 나갑니다.",traits:["체계적","리더십","효율","전통"]},
+            ESFJ:{name:"집정관",emoji:"💝",color:"#9333ea",desc:"사교적이고 따뜻한 돌봄의 달인. 사람들과의 조화를 중시하며 타인을 위해 헌신합니다.",traits:["사교적","돌봄","조화","헌신"]},
+            ISTP:{name:"장인",emoji:"🔧",color:"#64748b",desc:"논리적이고 실용적인 문제 해결사. 도구와 시스템을 깊이 이해하며 효율적으로 작동시킵니다.",traits:["실용적","논리적","독립적","유연"]},
+            ISFP:{name:"모험가",emoji:"🎭",color:"#7c3aed",desc:"유연하고 매력적인 예술가. 현재 순간을 즐기며 자신만의 방식으로 세상을 탐험합니다.",traits:["예술적","자유로운","공감","현재"]},
+            ESTP:{name:"기업가",emoji:"🎯",color:"#b45309",desc:"에너지 넘치는 실용주의자. 위험을 감수하며 현실적인 문제를 즉각적으로 해결합니다.",traits:["대담함","실용적","에너지","직접적"]},
+            ESFP:{name:"연예인",emoji:"🎪",color:"#c026d3",desc:"자발적이고 열정적인 엔터테이너. 삶을 즐기며 주변 사람들에게 기쁨을 나눕니다.",traits:["자발적","열정","사교적","현재"]},
+        };
+
+        function WelcomeScreen({ onStart }) {
+            const [visible, setVisible] = useState(false);
+            useEffect(() => { setTimeout(() => setVisible(true), 100); }, []);
+            
+            return (
+                <div style={{
+                    minHeight:'100vh', background:'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                    padding:'24px', position:'relative', overflow:'hidden', fontFamily:"'Noto Sans KR', sans-serif"
+                }}>
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} style={{
+                            position:'absolute', borderRadius:'50%',
+                            width: `${60 + i*30}px`, height: `${60 + i*30}px`,
+                            background: `radial-gradient(circle, ${['#7c3aed','#2563eb','#db2777','#0d9488','#ea580c','#4f46e5'][i]}44, transparent)`,
+                            top: `${[10,60,30,70,20,80][i]}%`, left: `${[20,70,50,10,80,40][i]}%`,
+                            animation: `float${i} ${4+i}s ease-in-out infinite`, transform:'translate(-50%,-50%)'
+                        }} />
+                    ))}
+                    <style>{`
+                        @keyframes float0{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(-20px);}}
+                        @keyframes float1{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(15px);}}
+                        @keyframes float2{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(-25px);}}
+                        @keyframes float3{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(10px);}}
+                        @keyframes float4{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(-15px);}}
+                        @keyframes float5{0%,100%{transform:translate(-50%,-50%) translateY(0);}50%{transform:translate(-50%,-50%) translateY(20px);}}
+                        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+                        .btn-glow:hover{box-shadow:0 0 30px rgba(124,58,237,0.6);}
+                        .choice-btn:hover{transform:scale(1.02);border-color:rgba(255,255,255,0.5) !important;}
+                        .choice-btn:active{transform:scale(0.98);}
+                    `}</style>
+                    
+                    <div style={{
+                        position:'relative', zIndex:10, textAlign:'center', maxWidth:'380px', width:'100%',
+                        opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                        transition:'all 0.8s cubic-bezier(0.34,1.56,0.64,1)'
+                    }}>
+                        <div style={{fontSize:'72px', marginBottom:'16px', animation:'pulse 3s ease-in-out infinite'}}>🧠</div>
+                        <h1 style={{
+                            fontSize:'48px', fontFamily:"'Bebas Neue', sans-serif", letterSpacing:'4px',
+                            background:'linear-gradient(135deg, #a78bfa, #60a5fa, #f472b6)',
+                            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+                            marginBottom:'8px', lineHeight:1
+                        }}>MBTI</h1>
+                        <p style={{color:'rgba(255,255,255,0.5)', fontSize:'13px', letterSpacing:'3px', marginBottom:'24px', textTransform:'uppercase'}}>
+                            성격 유형 검사
+                        </p>
+                        <p style={{
+                            color:'rgba(255,255,255,0.8)', fontSize:'15px', lineHeight:'1.7',
+                            marginBottom:'40px', fontWeight:300
+                        }}>
+                            20개의 질문으로 알아보는<br/>나의 진짜 성격 유형
+                        </p>
+                        
+                        <div style={{display:'flex', gap:'16px', justifyContent:'center', marginBottom:'40px'}}>
+                            {[['20','문항'],['5','분'],['16','가지 유형']].map(([n,l]) => (
+                                <div key={l} style={{
+                                    background:'rgba(255,255,255,0.05)', borderRadius:'12px', padding:'12px 16px',
+                                    border:'1px solid rgba(255,255,255,0.1)', flex:1
+                                }}>
+                                    <div style={{color:'#a78bfa', fontSize:'20px', fontWeight:700}}>{n}</div>
+                                    <div style={{color:'rgba(255,255,255,0.5)', fontSize:'11px', marginTop:'2px'}}>{l}</div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <button className="btn-glow" onClick={onStart} style={{
+                            width:'100%', padding:'18px', borderRadius:'16px', border:'none', cursor:'pointer',
+                            background:'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                            color:'#fff', fontSize:'17px', fontWeight:700, letterSpacing:'1px',
+                            transition:'all 0.3s ease', fontFamily:"'Noto Sans KR', sans-serif"
+                        }}>
+                            검사 시작하기 →
+                        </button>
+                        <p style={{color:'rgba(255,255,255,0.3)', fontSize:'12px', marginTop:'16px'}}>
+                            무료 · 익명 · 결과 공유 가능
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function TestScreen({ question, current, total, onAnswer, onBack, animating }) {
+            const progress = ((current) / total) * 100;
+            const dimLabels = { EI:'에너지 방향', SN:'인식 방식', TF:'판단 기준', JP:'생활 방식' };
+            const dimColors = { EI:'#a78bfa', SN:'#60a5fa', TF:'#f472b6', JP:'#34d399' };
+            const color = dimColors[question.dim];
+
+            return (
+                <div style={{
+                    minHeight:'100vh', background:'#0a0a14',
+                    display:'flex', flexDirection:'column',
+                    fontFamily:"'Noto Sans KR', sans-serif", position:'relative', overflow:'hidden'
+                }}>
+                    <style>{`
+                        .choice-btn{transition:all 0.2s ease;}
+                        .choice-btn:hover{transform:translateX(4px); background:rgba(255,255,255,0.08) !important;}
+                        .choice-btn:active{transform:scale(0.98);}
+                    `}</style>
+                    
+                    <div style={{
+                        position:'absolute', top:'-100px', left:'50%', transform:'translateX(-50%)',
+                        width:'300px', height:'300px', borderRadius:'50%',
+                        background:`radial-gradient(circle, ${color}22, transparent 70%)`, pointerEvents:'none'
+                    }} />
+
+                    <div style={{padding:'20px 20px 0', position:'relative', zIndex:10}}>
+                        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px'}}>
+                            <button onClick={onBack} disabled={current===0} style={{
+                                background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)',
+                                color: current===0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.8)',
+                                padding:'8px 14px', borderRadius:'10px', cursor: current===0 ? 'not-allowed' : 'pointer',
+                                fontSize:'13px'
+                            }}>← 이전</button>
+                            
+                            <span style={{color:'rgba(255,255,255,0.4)', fontSize:'13px', fontWeight:500}}>
+                                <span style={{color:'#fff', fontWeight:700}}>{current+1}</span> / {total}
+                            </span>
+                            
+                            <div style={{
+                                background: `${color}22`, border:`1px solid ${color}44`,
+                                color, padding:'6px 12px', borderRadius:'10px', fontSize:'11px', fontWeight:600
+                            }}>
+                                {dimLabels[question.dim]}
+                            </div>
+                        </div>
+                        
+                        <div style={{height:'4px', background:'rgba(255,255,255,0.06)', borderRadius:'4px', overflow:'hidden'}}>
+                            <div style={{
+                                height:'100%', width:`${progress}%`, borderRadius:'4px',
+                                background:`linear-gradient(90deg, ${color}, ${color}88)`,
+                                transition:'width 0.4s ease'
+                            }} />
+                        </div>
+                    </div>
+
+                    <div style={{flex:1, padding:'32px 20px', display:'flex', flexDirection:'column', justifyContent:'center'}}>
+                        <div style={{
+                            opacity: animating ? 0 : 1, transform: animating ? 'translateY(20px)' : 'translateY(0)',
+                            transition:'all 0.3s ease'
+                        }}>
+                            <div style={{
+                                fontSize:'13px', color: color, fontWeight:600, marginBottom:'16px',
+                                letterSpacing:'1px', textTransform:'uppercase'
+                            }}>Q{current+1}.</div>
+                            
+                            <h2 style={{
+                                color:'#fff', fontSize:'22px', fontWeight:700, lineHeight:'1.5',
+                                marginBottom:'40px'
+                            }}>{question.text}</h2>
+                            
+                            <div style={{display:'flex', flexDirection:'column', gap:'14px'}}>
+                                {[{opt:'a', data:question.a}, {opt:'b', data:question.b}].map(({opt, data}) => (
+                                    <button key={opt} className="choice-btn" onClick={() => onAnswer(data.type)} style={{
+                                        background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)',
+                                        borderRadius:'16px', padding:'20px', textAlign:'left', cursor:'pointer',
+                                        display:'flex', alignItems:'center', gap:'16px', color:'rgba(255,255,255,0.85)',
+                                        fontSize:'15px', lineHeight:'1.5', fontFamily:"'Noto Sans KR', sans-serif",
+                                        fontWeight:400
+                                    }}>
+                                        <div style={{
+                                            width:'36px', height:'36px', borderRadius:'50%', flexShrink:0,
+                                            background: `${color}22`, border:`1px solid ${color}55`,
+                                            display:'flex', alignItems:'center', justifyContent:'center',
+                                            color, fontSize:'13px', fontWeight:700
+                                        }}>{opt.toUpperCase()}</div>
+                                        {data.text}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{padding:'20px', display:'flex', justifyContent:'center', gap:'4px'}}>
+                        {questions.map((_, i) => (
+                            <div key={i} style={{
+                                width: i===current ? '16px' : '6px', height:'6px', borderRadius:'3px',
+                                background: i < current ? color : i===current ? color : 'rgba(255,255,255,0.15)',
+                                transition:'all 0.3s ease'
+                            }} />
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function ResultScreen({ result, onRestart }) {
+            const data = mbtiData[result];
+            const color = data.color;
+            const [visible, setVisible] = useState(false);
+            const [copied, setCopied] = useState(false);
+            const shareText = `나의 MBTI는 ${result} (${data.name}) ${data.emoji}\n"${data.desc}"\n\n여러분도 검사해보세요!`;
+            const qrData = encodeURIComponent(`MBTI결과: ${result} ${data.name} ${data.emoji}`);
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=ffffff&bgcolor=0a0a14&data=${qrData}&margin=10`;
+
+            useEffect(() => { setTimeout(() => setVisible(true), 100); }, []);
+
+            const handleCopy = () => {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                });
+            };
+
+            return (
+                <div style={{
+                    minHeight:'100vh', background:'#0a0a14',
+                    fontFamily:"'Noto Sans KR', sans-serif", padding:'24px', overflowY:'auto'
+                }}>
+                    <style>{`
+                        @keyframes popIn{0%{transform:scale(0.5);opacity:0;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+                        @keyframes fadeUp{0%{opacity:0;transform:translateY(20px);}100%{opacity:1;transform:translateY(0);}}
+                        @keyframes glow{0%,100%{box-shadow:0 0 20px ${color}44;}50%{box-shadow:0 0 40px ${color}88;}}
+                        .share-btn:hover{opacity:0.85;transform:translateY(-1px);}
+                        .share-btn{transition:all 0.2s ease;}
+                        .trait-tag:hover{transform:scale(1.05);}
+                        .trait-tag{transition:all 0.2s ease;}
+                    `}</style>
+                    
+                    <div style={{
+                        position:'fixed', top:'20%', left:'50%', transform:'translate(-50%,-50%)',
+                        width:'400px', height:'400px', borderRadius:'50%', pointerEvents:'none', zIndex:0,
+                        background:`radial-gradient(circle, ${color}18, transparent 70%)`
+                    }} />
+
+                    <div style={{maxWidth:'420px', margin:'0 auto', position:'relative', zIndex:1}}>
+                        <div style={{
+                            textAlign:'center', marginBottom:'20px',
+                            animation: visible ? 'popIn 0.6s cubic-bezier(0.34,1.56,0.64,1)' : 'none'
+                        }}>
+                            <div style={{fontSize:'80px', lineHeight:1}}>{data.emoji}</div>
+                        </div>
+
+                        <div style={{
+                            background:'rgba(255,255,255,0.03)', borderRadius:'24px',
+                            border:`1px solid ${color}33`, padding:'28px', marginBottom:'16px',
+                            animation: visible ? 'fadeUp 0.6s ease 0.2s both' : 'none',
+                            animationName: visible ? 'glow, fadeUp' : 'none',
+                            animationDuration: '3s, 0.6s', animationTimingFunction:'ease-in-out, ease',
+                            animationIterationCount:'infinite, 1', animationDelay:'0s, 0.2s', animationFillMode:'none, both'
+                        }}>
+                            <div style={{textAlign:'center', marginBottom:'20px'}}>
+                                <div style={{
+                                    display:'inline-block', padding:'4px 14px', borderRadius:'20px', marginBottom:'12px',
+                                    background:`${color}22`, border:`1px solid ${color}44`, color, fontSize:'12px', fontWeight:600
+                                }}>나의 유형</div>
+                                <h1 style={{
+                                    fontFamily:"'Bebas Neue', sans-serif", fontSize:'56px', letterSpacing:'6px',
+                                    color, lineHeight:1, marginBottom:'6px'
+                                }}>{result}</h1>
+                                <h2 style={{color:'rgba(255,255,255,0.9)', fontSize:'22px', fontWeight:700, marginBottom:'4px'}}>{data.name}</h2>
+                            </div>
+                            
+                            <div style={{display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center', marginBottom:'20px'}}>
+                                {data.traits.map(t => (
+                                    <span key={t} className="trait-tag" style={{
+                                        background:`${color}18`, border:`1px solid ${color}33`, color,
+                                        padding:'6px 14px', borderRadius:'20px', fontSize:'13px', fontWeight:500
+                                    }}>#{t}</span>
+                                ))}
+                            </div>
+                            
+                            <p style={{
+                                color:'rgba(255,255,255,0.65)', fontSize:'14px', lineHeight:'1.8',
+                                textAlign:'center', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'20px'
+                            }}>{data.desc}</p>
+                        </div>
+
+                        <div style={{
+                            background:'rgba(255,255,255,0.03)', borderRadius:'20px',
+                            border:'1px solid rgba(255,255,255,0.08)', padding:'24px', marginBottom:'16px',
+                            animation: visible ? 'fadeUp 0.6s ease 0.4s both' : 'none', textAlign:'center'
+                        }}>
+                            <p style={{color:'rgba(255,255,255,0.5)', fontSize:'12px', letterSpacing:'2px', textTransform:'uppercase', marginBottom:'16px'}}>
+                                📱 QR 코드로 공유하기
+                            </p>
+                            <div style={{
+                                display:'inline-block', padding:'12px', borderRadius:'16px',
+                                background:'rgba(255,255,255,0.05)', border:`1px solid ${color}33`,
+                                marginBottom:'12px'
+                            }}>
+                                <img 
+                                    src={qrUrl} 
+                                    alt="QR Code"
+                                    width="160" height="160"
+                                    style={{display:'block', borderRadius:'8px', imageRendering:'pixelated'}}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{
+                            display:'flex', flexDirection:'column', gap:'10px',
+                            animation: visible ? 'fadeUp 0.6s ease 0.5s both' : 'none'
+                        }}>
+                            <button className="share-btn" onClick={handleCopy} style={{
+                                padding:'16px', borderRadius:'14px', border:'none', cursor:'pointer',
+                                background: copied ? `linear-gradient(135deg, #059669, #047857)` : `linear-gradient(135deg, ${color}, ${color}bb)`,
+                                color:'#fff', fontSize:'15px', fontWeight:700
+                            }}>
+                                {copied ? '✓ 복사 완료!' : '📋 결과 텍스트 복사'}
+                            </button>
+                            
+                            <button className="share-btn" onClick={onRestart} style={{
+                                padding:'16px', borderRadius:'14px', cursor:'pointer', fontSize:'15px', fontWeight:600,
+                                background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)',
+                                color:'rgba(255,255,255,0.7)', fontFamily:"'Noto Sans KR', sans-serif"
+                            }}>
+                                🔄 다시 검사하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function calcResult(ans) {
+            let E=0,I=0,S=0,N=0,T=0,F=0,J=0,P=0;
+            Object.values(ans).forEach(type => {
+                if(type==='E')E++; else if(type==='I')I++;
+                else if(type==='S')S++; else if(type==='N')N++;
+                else if(type==='T')T++; else if(type==='F')F++;
+                else if(type==='J')J++; else if(type==='P')P++;
+            });
+            return `${E>=I?'E':'I'}${S>=N?'S':'N'}${T>=F?'T':'F'}${J>=P?'J':'P'}`;
+        }
+
+        function App() {
+            const [screen, setScreen] = useState('welcome');
+            const [currentQ, setCurrentQ] = useState(0);
+            const [answers, setAnswers] = useState({});
+            const [result, setResult] = useState(null);
+            const [animating, setAnimating] = useState(false);
+
+            const handleAnswer = (type) => {
+                if(animating) return;
+                const newAnswers = { ...answers, [currentQ]: type };
+                setAnswers(newAnswers);
+                if(currentQ < questions.length - 1) {
+                    setAnimating(true);
+                    setTimeout(() => { setCurrentQ(q => q+1); setAnimating(false); }, 280);
+                } else {
+                    setResult(calcResult(newAnswers));
+                    setScreen('result');
+                }
+            };
+
+            const handleBack = () => {
+                if(currentQ > 0 && !animating) {
+                    setAnimating(true);
+                    setTimeout(() => { setCurrentQ(q => q-1); setAnimating(false); }, 280);
+                }
+            };
+
+            const restart = () => {
+                setScreen('welcome'); setCurrentQ(0); setAnswers({}); setResult(null);
+            };
+
+            if(screen === 'welcome') return <WelcomeScreen onStart={() => setScreen('test')} />;
+            if(screen === 'test') return <TestScreen question={questions[currentQ]} current={currentQ} total={questions.length} onAnswer={handleAnswer} onBack={handleBack} animating={animating} />;
+            return <ResultScreen result={result} onRestart={restart} />;
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
